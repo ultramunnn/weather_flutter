@@ -1,24 +1,33 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:weather_app/model.dart';
-import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 
-class WheatherClientApi {
-  static final appKey = '78b2b5857d2e450281aaac65aa161b6d';
-  static final baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
+// static final appKey = '78b2b5857d2e450281aaac65aa161b6d';
+// static final baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
 
-  static Future<WeatherModel> getWeather(String city) async {
-    Response response = await Dio().get('$baseUrl?q=$city&appid=$appKey');
+class WeatherClientApi with ChangeNotifier {
+  WeatherModel? _weather;
+  WeatherModel? get weather => _weather;
+
+  Future<void> fetchWeather(String name) async {
+    final apiKey = '78b2b5857d2e450281aaac65aa161b6d';
+    final url =
+        "https://api.openweathermap.org/data/2.5/forecast?q=$name&appid=$apiKey";
 
     try {
+      final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        final data = response.data;
-        return WeatherModel.fromJson(data);
+        final data = jsonDecode(response.body);
+        _weather = WeatherModel.fromJson(data);
+        notifyListeners();
+        print(response.body);
       } else {
-        throw Exception('Gagal mengambil data ${response.statusCode}');
+        Exception('Failed to fetch weather data');
       }
     } catch (e) {
-      throw Exception('Terjadi kesalahan $e');
+      Exception('Failed to fetch weather data');
     }
   }
 }
